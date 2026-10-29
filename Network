@@ -1,0 +1,175 @@
+
+import numpy as np
+from tensorflow.keras.datasets import mnist
+
+print("Chargement des données MNIST...")
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+X_train = x_train.reshape(-1, 784).astype(np.float32) / 255.0
+X_test = x_test.reshape(-1, 784).astype(np.float32) / 255.0
+Y = np.eye(10)[y_train]
+
+print("Données chargées ! Début de l'entraînement.")
+
+np.random.seed(0)
+lr = 0.01
+batch_size = 64
+
+W1 = np.random.randn(784, 128) * np.sqrt(2 / 784)
+b1 = np.zeros(128)
+W2 = np.random.randn(128, 10) * np.sqrt(2 / 128)
+b2 = np.zeros(10)
+
+for step in range(3000):
+    i = np.random.randint(0, len(X_train), batch_size)
+    x = X_train[i]
+    y = Y[i]
+
+    z1 = x @ W1 + b1
+    h = np.maximum(0, z1)
+
+    z2 = h @ W2 + b2
+    z2 -= z2.max(axis=1, keepdims=True)
+
+    e = np.exp(z2)
+    p = e / e.sum(axis=1, keepdims=True)
+
+    d2 = (p - y) / batch_size
+    d1 = (d2 @ W2.T) * (z1 > 0)
+
+    W2 -= lr * (h.T @ d2)
+    b2 -= lr * d2.sum(axis=0)
+    W1 -= lr * (x.T @ d1)
+    b1 -= lr * d1.sum(axis=0)
+
+    if (step + 1) % 500 == 0:
+        print(f"Étape {step + 1}/3000")
+
+print("Évaluation...")
+
+h_test = np.maximum(0, X_test @ W1 + b1)
+predictions = (h_test @ W2 + b2).argmax(axis=1)
+
+accuracy = np.mean(predictions == y_test)
+print(f"Précision sur les données de test : {accuracy:.2%}")
+
+
+
+import numpy as np
+from tensorflow.keras.datasets import mnist
+
+# 1. Chargement des données
+print("Chargement de MNIST...")
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+X_train = x_train.reshape(-1, 784).astype(np.float32) / 255.0
+X_test = x_test.reshape(-1, 784).astype(np.float32) / 255.0
+Y = np.eye(10)[y_train]
+
+# 2. Création du réseau
+np.random.seed(0)
+lr = 0.01
+
+W1 = np.random.randn(784, 128) * np.sqrt(2 / 784)
+b1 = np.zeros(128)
+W2 = np.random.randn(128, 10) * np.sqrt(2 / 128)
+b2 = np.zeros(10)
+
+# 3. Entraînement
+print("Entraînement...")
+for step in range(3000):
+    i = np.random.randint(0, len(X_train), 64)
+    x, y = X_train[i], Y[i]
+
+    z1 = x @ W1 + b1
+    h = np.maximum(0, z1)
+
+    z2 = h @ W2 + b2
+    z2 -= z2.max(axis=1, keepdims=True)
+    e = np.exp(z2)
+    p = e / e.sum(axis=1, keepdims=True)
+
+    d2 = (p - y) / len(i)
+    d1 = (d2 @ W2.T) * (z1 > 0)
+
+    W2 -= lr * (h.T @ d2)
+    b2 -= lr * d2.sum(axis=0)
+    W1 -= lr * (x.T @ d1)
+    b1 -= lr * d1.sum(axis=0)
+
+    if (step + 1) % 500 == 0:
+        print(f"Étape {step + 1}/3000")
+
+# 4. Choisir une image à analyser
+index = 0
+x = X_test[index:index + 1]
+vrai_chiffre = y_test[index]
+
+# 5. Calcul des neurones
+z1 = x @ W1 + b1
+h = np.maximum(0, z1)
+z2 = h @ W2 + b2
+
+# Softmax
+z2_stable = z2 - z2.max(axis=1, keepdims=True)
+probas = np.exp(z2_stable)
+probas /= probas.sum(axis=1, keepdims=True)
+
+prediction = int(np.argmax(probas))
+
+# 6. Affichage des résultats
+np.set_printoptions(precision=4, suppress=True)
+
+print("\n" + "=" * 55)
+print("ANALYSE DU RÉSEAU DE NEURONES")
+print("=" * 55)
+
+print(f"\nImage analysée : {index}")
+print(f"Vrai chiffre : {vrai_chiffre}")
+print(f"Prédiction : {prediction}")
+print(f"Bonne réponse : {prediction == vrai_chiffre}")
+
+print("\n--- ARCHITECTURE ---")
+print("Couche d'entrée :", X_train.shape[1], "neurones")
+print("Couche cachée   :", W1.shape[1], "neurones")
+print("Couche de sortie:", W2.shape[1], "neurones")
+
+print("\n--- PARAMÈTRES APPRENTIS ---")
+print("W1 :", W1.shape, "poids")
+print("b1 :", b1.shape, "biais")
+print("W2 :", W2.shape, "poids")
+print("b2 :", b2.shape, "biais")
+print("Nombre total de paramètres :",
+      W1.size + b1.size + W2.size + b2.size)
+
+print("\n--- ENTRÉE : 784 PIXELS ---")
+print(x[0])
+
+print("\n--- COUCHE CACHÉE : 128 NEURONES ---")
+print("Valeurs avant ReLU (z1) :")
+print(z1[0])
+print("\nActivations après ReLU (h) :")
+print(h[0])
+
+print("\n--- COUCHE DE SORTIE : 10 NEURONES ---")
+print("Scores bruts (z2) :")
+print(z2[0])
+
+print("\nProbabilités par chiffre :")
+for chiffre, proba in enumerate(probas[0]):
+    barre = "#" * int(proba * 40)
+    print(f"{chiffre} : {proba * 100:7.3f}% {barre}")
+
+print("\n--- EXEMPLES DE POIDS ET BIAIS ---")
+print("W1 : poids des 10 premiers pixels vers le neurone 0 :")
+print(W1[:10, 0])
+print("b1[0] =", b1[0])
+
+print("\nPoids des 128 neurones cachés vers les sorties :")
+print("W2[:, 0] =", W2[:, 0])
+print("b2 =", b2)
+
+print("\n--- ACTIVITÉ DES NEURONES ---")
+print("Neurones cachés actifs :", np.count_nonzero(h[0] > 0), "/ 128")
+print("Neurones cachés inactifs :", np.count_nonzero(h[0] == 0), "/ 128")
