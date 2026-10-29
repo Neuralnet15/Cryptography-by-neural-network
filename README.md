@@ -128,3 +128,6 @@ python main.py
 ## License
 
 Distributed under the MIT License.
+
+## Warning
+This files is a simulation and he can use for encrypt really communications
